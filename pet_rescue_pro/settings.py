@@ -78,15 +78,15 @@ WSGI_APPLICATION = 'pet_rescue_pro.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'pet_rescue_db',
-        'USER': 'postgres',
-        'PASSWORD': 'admin123',
+        'NAME': 'pet_rescue_db1',       # your database name
+        'USER': 'postgres',             # your postgres username
+        'PASSWORD': 'admin123',     # your postgres password
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
 
-
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -123,11 +123,14 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+AUTH_USER_MODEL = 'pet_rescue_app.User'
+
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'pet_rescue_app.exceptions.custom_exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

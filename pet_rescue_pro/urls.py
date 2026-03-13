@@ -26,5 +26,6 @@ urlpatterns = [
     path('', lambda request: HttpResponse("Pet Rescue API is Running 🐾")),
     path('admin/', admin.site.urls),
     path('api/', include('pet_rescue_app.urls')),
+    
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
