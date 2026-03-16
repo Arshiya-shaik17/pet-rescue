@@ -34,7 +34,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class PetRequest(models.Model):
-
     REQUEST_TYPE_CHOICES = [
         ("Lost", "Lost"),
         ("Found", "Found"),
@@ -47,18 +46,15 @@ class PetRequest(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-
     request_type = models.CharField(max_length=10, choices=REQUEST_TYPE_CHOICES)
-
     pet_type = models.CharField(max_length=50)
     breed = models.CharField(max_length=100)
     color = models.CharField(max_length=100)
-
     location = models.CharField(max_length=200)
     contact_info = models.CharField(max_length=100)
-
+    description = models.TextField(blank=True, null=True)           # ✅ new
+    photo = models.ImageField(upload_to='pet_photos/', blank=True, null=True)  # ✅ new
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

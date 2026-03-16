@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import status as drf_status
 
 from .models import User, PetRequest
 from .serializers import UserSerializer, PetRequestSerializer, AdminPetRequestSerializer
@@ -80,4 +81,52 @@ def login_view(request):
     return Response({
         "access": str(refresh.access_token),
         "refresh": str(refresh)
+    })
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def search_pets(request):
+    queryset = PetRequest.objects.filter(status='Accepted')
+
+    pet_type = request.query_params.get('pet_type', None)
+    breed = request.query_params.get('breed', None)
+    color = request.query_params.get('color', None)
+    location = request.query_params.get('location', None)
+    request_type = request.query_params.get('request_type', None)
+
+    if pet_type:
+        queryset = queryset.filter(pet_type__icontains=pet_type)
+    if breed:
+        queryset = queryset.filter(breed__icontains=breed)
+    if color:
+        queryset = queryset.filter(color__icontains=color)
+    if location:
+        queryset = queryset.filter(location__icontains=location)
+    if request_type:
+        queryset = queryset.filter(request_type__icontains=request_type)
+
+    serializer = PetRequestSerializer(queryset, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_pets(request):
+    accepted_pets = PetRequest.objects.filter(status='Accepted')
+    serializer = PetRequestSerializer(accepted_pets, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me(request):
+    return Response({
+        "id": request.user.id,
+        "email": request.user.email,
+        "first_name": request.user.first_name,
+        "last_name": request.user.last_name,
+        "is_staff": request.user.is_staff,
     })
