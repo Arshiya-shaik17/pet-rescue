@@ -5,14 +5,18 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status as drf_status
-
-from .models import User, PetRequest
-from .serializers import UserSerializer, PetRequestSerializer, AdminPetRequestSerializer
+from .models import User, PetRequest, Notification
+from .serializers import UserSerializer, PetRequestSerializer, AdminPetRequestSerializer, NotificationSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def get_permissions(self):
+        if self.action == 'create':  # register = open to everyone
+            return [AllowAny()]
+        return [IsAuthenticated()]   # other actions need login
 
 
 class PetRequestViewSet(viewsets.ModelViewSet):
@@ -54,6 +58,12 @@ class AdminApprovalView(APIView):
 
         pet_request.status = new_status
         pet_request.save()
+
+        # 🔔 Create notification for user
+        Notification.objects.create(
+            user=pet_request.user,
+            message=f"Your {pet_request.pet_type} ({pet_request.request_type}) request has been {new_status} by admin."
+        )
 
         return Response({
             "message": f"Pet request {new_status} successfully",
@@ -130,3 +140,80 @@ def me(request):
         "last_name": request.user.last_name,
         "is_staff": request.user.is_staff,
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_notifications(request):
+    notifications = Notification.objects.filter(
+        user=request.user
+    ).order_by('-created_at')
+    serializer = NotificationSerializer(notifications, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, pk):
+    try:
+        notification = Notification.objects.get(pk=pk, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return Response({"message": "Notification marked as read"})
+    except Notification.DoesNotExist:
+        return Response(
+            {"error": "Notification not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    user = request.user
+    if request.method == 'GET':
+        return Response({
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "is_staff": user.is_staff,
+        })
+    elif request.method == 'PUT':
+        first_name = request.data.get('first_name', user.first_name)
+        last_name = request.data.get('last_name', user.last_name)
+        email = request.data.get('email', user.email)
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.save()
+        return Response({
+            "message": "Profile updated successfully!",
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+        })
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    user = request.user
+    old_password = request.data.get('old_password')
+    new_password = request.data.get('new_password')
+
+    if not user.check_password(old_password):
+        return Response(
+            {"error": "Old password is incorrect"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    user.set_password(new_password)
+    user.save()
+    return Response({"message": "Password changed successfully!"})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_account(request):
+    user = request.user
+    user.delete()
+    return Response({"message": "Account deleted successfully!"})

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, PetRequest
+from .models import User, PetRequest, Notification
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -30,3 +30,10 @@ class AdminPetRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = PetRequest
         fields = ['id', 'status']  # admin can only change status
+
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
